@@ -30,7 +30,7 @@ The user wants to learn how Jev works, how it is used, and how it can be impleme
 
 ## Tasks
 - [x] T1 Scaffold: git repo, feature branch, task doc, package.json, README skeleton
-- [ ] T2 Core lib with tests first: request validation/building, confidence routing, composite scoring, code generation (curl/JS/Python), cost estimate
+- [x] T2 Core lib with tests first: request validation/building, confidence routing, composite scoring, code generation (curl/JS/Python), cost estimate
 - [ ] T3 Demo engine (keyword heuristic) with tests
 - [ ] T4 Server: static files, `/api/status`, `/api/systemone` proxy, key never exposed, error mapping, with tests
 - [ ] T5 UI shell: design tokens (light/dark), navigation, result visualizations for noul / choice / score
@@ -44,7 +44,7 @@ The user wants to learn how Jev works, how it is used, and how it can be impleme
 - `.env.example` write was denied by the user's permission settings; the variable is documented in README instead.
 
 ## Evidence
-(none yet)
+- T2: RED observed (4 test files failed, modules missing) -> GREEN: node --test, 38 pass / 0 fail (questions, routing, codegen, cost).
 
 ## Next step
 T1.
