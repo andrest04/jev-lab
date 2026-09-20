@@ -34,11 +34,11 @@ The user wants to learn how Jev works, how it is used, and how it can be impleme
 - [x] T2 Core lib with tests first: request validation/building, confidence routing, composite scoring, code generation (curl/JS/Python), cost estimate
 - [x] T3 Demo engine (keyword heuristic) with tests
 - [x] T4 Server: static files, `/api/status`, `/api/systemone` proxy, key never exposed, error mapping, with tests
-- [ ] T5 UI shell: design tokens (light/dark), navigation, result visualizations for noul / choice / score
-- [ ] T6 Playground: state editor, question builder, run, request/response/code tabs, usage and cost
-- [ ] T7 Examples: support triage, spam composite scoring (weights without re-inference), smart-home function calling, semantic find, citation check, guardrails
-- [ ] T8 Learn page: mental model, primitives cheat sheet, pitfalls, limits
-- [ ] T9 End-to-end check: tests green, server boots, page renders in both themes and at phone width
+- [x] T5 UI shell: design tokens (light/dark), navigation, result visualizations for noul / choice / score
+- [x] T6 Playground: state editor, question builder, run, request/response/code tabs, usage and cost
+- [x] T7 Examples: support triage, spam composite scoring (weights without re-inference), smart-home function calling, semantic find, citation check, guardrails
+- [x] T8 Learn page: mental model, primitives cheat sheet, pitfalls, limits
+- [x] T9 End-to-end check: tests green, server boots, page renders in both themes and at phone width
 
 ## Progress
 - Engram mirror: PENDING. `mem_save` fails with `ambiguous_project` (MCP server cwd is C:\Users\andres\code; available projects `aniversario`, `finance-app-landing` do not include this one). Resynchronize when a project can be resolved.
@@ -50,6 +50,8 @@ The user wants to learn how Jev works, how it is used, and how it can be impleme
 - T4: RED observed (app + env tests failed, modules missing) -> GREEN: node --test, 65 pass / 0 fail. Covers key never leaked (status, success, upstream errors), Host/Origin guards, 400/413/422/502 mapping, static path traversal.
 - T4b: added /lib/ mount for browser (RED: 2 fail; hang found because failed asserts skipped close(), fixed with tracked servers + after hook) -> GREEN: 68 pass / 0 fail.
 - T3b/T7a: sample-answer expansion (lib/fixtures.mjs) and six examples with pure decision logic (lib/examples.mjs). RED: 1 module missing -> GREEN: 110 pass / 0 fail (one test expectation corrected: composite 0.35 is in the suspicious band by design).
+- T5-T8: UI built (dom/viz/results/extras/example-view/playground/learn/home/main + styles). DOM code has no unit tests; verified in Chrome instead.
+- T9: 111 pass / 0 fail. Browser: all 9 routes render with 0 app JS errors (only a Chrome PDF extension logged errors). Interaction checks: phish sliders flipped verdict likely-phishing -> suspicious with counter "Model calls: 1, policy changes: 2"; playground demo run, Python snippet, validation blocks Run. Bugs found and fixed: invisible Copy button in light theme; horizontal overflow at 396px (grid min-width:auto) fixed, then 9/9 routes fit; score marker label overlap. NOT verified: live calls to api.typesafe.ai (no key); only unit-tested with a fake fetch.
 
 ## Next step
-T5.
+User review. Pending: Engram mirror (ambiguous_project), live-mode run with a real TYPESAFE_API_KEY (unverified: no key available).

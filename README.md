@@ -24,6 +24,14 @@ No key? The lab starts in **demo mode**: a keyword heuristic that mimics the res
 shape so you can explore the interface. It is not Jev and its answers are not evidence
 of how Jev behaves.
 
+## What is in it
+
+- **Examples**: six worked patterns (ticket routing, composite scoring, function calling, semantic search, citation checks, guardrails). Each shows the typed questions, the answers as instruments, the decision your code makes, and the logic to copy.
+- **Playground**: write state, build noul / choice / score questions, run, and copy the request as curl, fetch or the Python SDK.
+- **Learn**: the mental model, primitives, an interactive confidence explorer, known pitfalls and limits.
+
+Three answer modes are always labeled in the UI: **live** (real Jev), **sample** (hand-written illustrations for preset inputs) and **demo** (keyword heuristic in the playground).
+
 ## Test
 
 ```bash

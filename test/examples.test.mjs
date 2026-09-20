@@ -74,6 +74,20 @@ for (const example of EXAMPLES) {
   });
 }
 
+test("usesPolicy is truthful: set exactly when a decision reacts to the routing policy", () => {
+  const lenient = { act: 0.05, escalate: 0.01 };
+  const strict = { act: 0.999, escalate: 0.998 };
+  for (const example of EXAMPLES) {
+    const reacts = example.presets.some((p) => {
+      const answers = expandSample(example.questions(p.state), p.sample).answers;
+      const a = example.decide(answers, { policy: lenient, state: p.state });
+      const b = example.decide(answers, { policy: strict, state: p.state });
+      return a.tone !== b.tone;
+    });
+    assert.equal(Boolean(example.usesPolicy), reacts, `${example.id}: usesPolicy should be ${reacts}`);
+  }
+});
+
 test("ticket desk: a clear billing ticket goes to billing with the refund macro", () => {
   const d = decideFor("ticket-desk", "double-charge");
   assert.equal(d.headline, "Route to billing");
