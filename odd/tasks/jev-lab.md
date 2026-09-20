@@ -32,7 +32,7 @@ The user wants to learn how Jev works, how it is used, and how it can be impleme
 - [x] T1 Scaffold: git repo, feature branch, task doc, package.json, README skeleton
 - [x] T2 Core lib with tests first: request validation/building, confidence routing, composite scoring, code generation (curl/JS/Python), cost estimate
 - [x] T3 Demo engine (keyword heuristic) with tests
-- [ ] T4 Server: static files, `/api/status`, `/api/systemone` proxy, key never exposed, error mapping, with tests
+- [x] T4 Server: static files, `/api/status`, `/api/systemone` proxy, key never exposed, error mapping, with tests
 - [ ] T5 UI shell: design tokens (light/dark), navigation, result visualizations for noul / choice / score
 - [ ] T6 Playground: state editor, question builder, run, request/response/code tabs, usage and cost
 - [ ] T7 Examples: support triage, spam composite scoring (weights without re-inference), smart-home function calling, semantic find, citation check, guardrails
@@ -46,6 +46,7 @@ The user wants to learn how Jev works, how it is used, and how it can be impleme
 ## Evidence
 - T2: RED observed (4 test files failed, modules missing) -> GREEN: node --test, 38 pass / 0 fail (questions, routing, codegen, cost).
 - T3: RED observed (demo.test.mjs failed, module missing) -> GREEN: node --test, 45 pass / 0 fail.
+- T4: RED observed (app + env tests failed, modules missing) -> GREEN: node --test, 65 pass / 0 fail. Covers key never leaked (status, success, upstream errors), Host/Origin guards, 400/413/422/502 mapping, static path traversal.
 
 ## Next step
-T4.
+T5.
