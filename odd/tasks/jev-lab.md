@@ -7,6 +7,7 @@ A local web app to learn and test TypeSafe's Jev model (System One): a free-form
 The user wants to learn how Jev works, how it is used, and how it can be implemented, through interactive and interesting examples.
 
 ## Constraints and decisions
+- Three response modes: live (real Jev), sample (hand-written illustrative answers for preset inputs, labeled), demo (keyword heuristic, Playground only, labeled).
 - Published Artifacts cannot reach `api.typesafe.ai` (CSP blocks fetch) and the API key must stay server-side, so this is a local Node app with a proxy. Decision date: 2026-09-20.
 - Zero runtime dependencies. Node 24, ESM, JSDoc types. No build step.
 - The browser never sees the API key. Only the server reads `TYPESAFE_API_KEY`.
@@ -48,6 +49,7 @@ The user wants to learn how Jev works, how it is used, and how it can be impleme
 - T3: RED observed (demo.test.mjs failed, module missing) -> GREEN: node --test, 45 pass / 0 fail.
 - T4: RED observed (app + env tests failed, modules missing) -> GREEN: node --test, 65 pass / 0 fail. Covers key never leaked (status, success, upstream errors), Host/Origin guards, 400/413/422/502 mapping, static path traversal.
 - T4b: added /lib/ mount for browser (RED: 2 fail; hang found because failed asserts skipped close(), fixed with tracked servers + after hook) -> GREEN: 68 pass / 0 fail.
+- T3b/T7a: sample-answer expansion (lib/fixtures.mjs) and six examples with pure decision logic (lib/examples.mjs). RED: 1 module missing -> GREEN: 110 pass / 0 fail (one test expectation corrected: composite 0.35 is in the suspicious band by design).
 
 ## Next step
 T5.
