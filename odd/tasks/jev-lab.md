@@ -31,7 +31,7 @@ The user wants to learn how Jev works, how it is used, and how it can be impleme
 ## Tasks
 - [x] T1 Scaffold: git repo, feature branch, task doc, package.json, README skeleton
 - [x] T2 Core lib with tests first: request validation/building, confidence routing, composite scoring, code generation (curl/JS/Python), cost estimate
-- [ ] T3 Demo engine (keyword heuristic) with tests
+- [x] T3 Demo engine (keyword heuristic) with tests
 - [ ] T4 Server: static files, `/api/status`, `/api/systemone` proxy, key never exposed, error mapping, with tests
 - [ ] T5 UI shell: design tokens (light/dark), navigation, result visualizations for noul / choice / score
 - [ ] T6 Playground: state editor, question builder, run, request/response/code tabs, usage and cost
@@ -45,6 +45,7 @@ The user wants to learn how Jev works, how it is used, and how it can be impleme
 
 ## Evidence
 - T2: RED observed (4 test files failed, modules missing) -> GREEN: node --test, 38 pass / 0 fail (questions, routing, codegen, cost).
+- T3: RED observed (demo.test.mjs failed, module missing) -> GREEN: node --test, 45 pass / 0 fail.
 
 ## Next step
-T1.
+T4.
