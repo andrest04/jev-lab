@@ -28,9 +28,10 @@ The user wants to learn how Jev works, how it is used, and how it can be impleme
 
 ## Delivery
 - Strategy: ask-on-risk. Forecast: ~1,600 authored changed lines across several work units; no PR planned (no remote).
+- Outcome (2026-09-20): work was done on branch `feat/jev-lab` in 8 work-unit commits. `main` had no commits (the feature branch was created before the first commit), so there was nothing to merge into. On user request the feature branch was renamed to `main` (equivalent to a fast-forward merge plus deleting the branch). `main` is at `fdef0b2`; `feat/jev-lab` no longer exists; the working tree was clean. No remote, nothing pushed.
 
 ## Tasks
-- [x] T1 Scaffold: git repo, feature branch, task doc, package.json, README skeleton
+- [x] T1 Scaffold: git repo, feature branch (later renamed to `main`, see Delivery), task doc, package.json, README skeleton
 - [x] T2 Core lib with tests first: request validation/building, confidence routing, composite scoring, code generation (curl/JS/Python), cost estimate
 - [x] T3 Demo engine (keyword heuristic) with tests
 - [x] T4 Server: static files, `/api/status`, `/api/systemone` proxy, key never exposed, error mapping, with tests
@@ -54,4 +55,7 @@ The user wants to learn how Jev works, how it is used, and how it can be impleme
 - T9: 111 pass / 0 fail. Browser: all 9 routes render with 0 app JS errors (only a Chrome PDF extension logged errors). Interaction checks: phish sliders flipped verdict likely-phishing -> suspicious with counter "Model calls: 1, policy changes: 2"; playground demo run, Python snippet, validation blocks Run. Bugs found and fixed: invisible Copy button in light theme; horizontal overflow at 396px (grid min-width:auto) fixed, then 9/9 routes fit; score marker label overlap. NOT verified: live calls to api.typesafe.ai (no key); only unit-tested with a fake fetch.
 
 ## Next step
-User review. Pending: Engram mirror (ambiguous_project), live-mode run with a real TYPESAFE_API_KEY (unverified: no key available).
+Feature is complete and on `main`. Open items:
+- Live-mode run with a real `TYPESAFE_API_KEY` (unverified: no key was available; the upstream forwarding is only unit-tested with a fake fetch).
+- Engram mirror (`ambiguous_project`, see Progress).
+- This document was edited after `fdef0b2` and is not yet committed.
