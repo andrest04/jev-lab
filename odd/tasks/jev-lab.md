@@ -47,6 +47,7 @@ The user wants to learn how Jev works, how it is used, and how it can be impleme
 - T2: RED observed (4 test files failed, modules missing) -> GREEN: node --test, 38 pass / 0 fail (questions, routing, codegen, cost).
 - T3: RED observed (demo.test.mjs failed, module missing) -> GREEN: node --test, 45 pass / 0 fail.
 - T4: RED observed (app + env tests failed, modules missing) -> GREEN: node --test, 65 pass / 0 fail. Covers key never leaked (status, success, upstream errors), Host/Origin guards, 400/413/422/502 mapping, static path traversal.
+- T4b: added /lib/ mount for browser (RED: 2 fail; hang found because failed asserts skipped close(), fixed with tracked servers + after hook) -> GREEN: 68 pass / 0 fail.
 
 ## Next step
 T5.

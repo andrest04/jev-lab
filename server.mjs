@@ -17,7 +17,9 @@ try {
 const apiKey = (process.env.TYPESAFE_API_KEY || fileEnv.TYPESAFE_API_KEY || "").trim() || undefined;
 const port = Number(process.env.PORT || fileEnv.PORT || 4173);
 
-const server = http.createServer(createApp({ apiKey, publicDir: path.join(root, "public") }));
+const server = http.createServer(
+  createApp({ apiKey, publicDir: path.join(root, "public"), libDir: path.join(root, "lib") }),
+);
 
 server.on("error", (err) => {
   if (err.code === "EADDRINUSE") {

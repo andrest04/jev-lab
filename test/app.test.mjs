@@ -1,7 +1,7 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
-import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { createApp } from "../lib/app.mjs";
@@ -14,22 +14,44 @@ const validBody = {
 };
 
 let publicDir;
+let libDir;
 before(async () => {
   publicDir = await mkdtemp(path.join(tmpdir(), "jev-lab-"));
+  libDir = path.join(publicDir, "..", `${path.basename(publicDir)}-lib`);
+  await mkdir(libDir);
   await writeFile(path.join(publicDir, "index.html"), "<title>lab</title>");
   await writeFile(path.join(publicDir, "app.css"), "body{}");
+  await writeFile(path.join(libDir, "shared.mjs"), "export const shared = 1;");
+  await writeFile(path.join(libDir, "secret.txt"), "not a module");
 });
-after(() => rm(publicDir, { recursive: true, force: true }));
+// A failing assertion skips the explicit close() call, so every server is also tracked
+// here and force-closed in after(). Otherwise a red test leaves the runner hanging.
+const openServers = new Set();
+
+after(async () => {
+  for (const server of openServers) {
+    server.closeAllConnections();
+    server.close();
+  }
+  await rm(publicDir, { recursive: true, force: true });
+  await rm(libDir, { recursive: true, force: true });
+});
 
 async function start(options = {}) {
-  const app = createApp({ publicDir, ...options });
+  const app = createApp({ publicDir, libDir, ...options });
   const server = http.createServer(app);
+  openServers.add(server);
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const { port } = server.address();
   return {
     port,
     url: `http://127.0.0.1:${port}`,
-    close: () => new Promise((resolve) => server.close(resolve)),
+    close: () =>
+      new Promise((resolve) => {
+        openServers.delete(server);
+        server.closeAllConnections();
+        server.close(resolve);
+      }),
   };
 }
 
@@ -202,6 +224,34 @@ test("static serving cannot escape the public directory", async () => {
     assert.ok(res.status === 403 || res.status === 404, `${route} returned ${res.status}`);
     assert.ok(!res.text.includes("jev-lab"), `${route} leaked a file`);
   }
+  await s.close();
+});
+
+test("mounts the shared lib directory under /lib/ for the browser", async () => {
+  const s = await start();
+  const res = await fetch(`${s.url}/lib/shared.mjs`);
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get("content-type"), /text\/javascript/);
+  assert.match(await res.text(), /shared = 1/);
+  await s.close();
+});
+
+test("/lib/ only serves .mjs modules and cannot escape its directory", async () => {
+  const s = await start();
+  const notModule = await fetch(`${s.url}/lib/secret.txt`);
+  assert.equal(notModule.status, 404);
+  for (const route of ["/lib/..%2findex.html", "/lib/..%2f..%2fpackage.json"]) {
+    const res = await rawRequest(s.port, { route });
+    assert.ok(res.status === 403 || res.status === 404, `${route} returned ${res.status}`);
+    assert.ok(!res.text.includes("<title>lab</title>"), `${route} escaped the lib mount`);
+  }
+  await s.close();
+});
+
+test("without a libDir, /lib/ is not served", async () => {
+  const s = await start({ libDir: undefined });
+  const res = await fetch(`${s.url}/lib/shared.mjs`);
+  assert.equal(res.status, 404);
   await s.close();
 });
 
