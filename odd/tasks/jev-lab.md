@@ -58,4 +58,3 @@ The user wants to learn how Jev works, how it is used, and how it can be impleme
 Feature is complete and on `main`. Open items:
 - Live-mode run with a real `TYPESAFE_API_KEY` (unverified: no key was available; the upstream forwarding is only unit-tested with a fake fetch).
 - Engram mirror (`ambiguous_project`, see Progress).
-- This document was edited after `fdef0b2` and is not yet committed.
