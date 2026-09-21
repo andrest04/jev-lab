@@ -1,6 +1,7 @@
 // Shared result pieces: run banner, instrument list, decision panel, policy sliders.
 
 import { h } from "./dom.mjs";
+import { t } from "./i18n-state.mjs";
 import { renderAnswer, tierChip } from "./viz.mjs";
 import { costUsd, formatUsd } from "/lib/cost.mjs";
 
@@ -13,11 +14,11 @@ export function runBanner(run) {
     return h(
       "div",
       { class: "banner banner-live", role: "status" },
-      h("strong", null, `Live answer from ${run.response.model}`),
+      h("strong", null, t("results.live.title", { model: run.response.model })),
       h(
         "span",
         null,
-        `${run.latencyMs} ms · ${usage.input_tokens ?? "?"} input tokens · about ${formatUsd(costUsd(usage))} (output is free)`,
+        t("results.live.detail", { ms: run.latencyMs, input: usage.input_tokens ?? "?", cost: formatUsd(costUsd(usage)) }),
       ),
     );
   }
@@ -25,15 +26,15 @@ export function runBanner(run) {
     return h(
       "div",
       { class: "banner banner-sample", role: "status" },
-      h("strong", null, "Hand-written sample, not model output"),
-      h("span", null, "These answers illustrate the response shape for this preset. Add TYPESAFE_API_KEY and restart the server to run Jev on any input."),
+      h("strong", null, t("results.sample.title")),
+      h("span", null, t("results.sample.detail")),
     );
   }
   return h(
     "div",
     { class: "banner banner-demo", role: "status" },
-    h("strong", null, "Demo engine, not Jev"),
-    h("span", null, "A keyword heuristic mimics the response shape. Its answers say nothing about how Jev behaves."),
+    h("strong", null, t("results.demo.title")),
+    h("span", null, t("results.demo.detail")),
   );
 }
 
@@ -64,7 +65,7 @@ export function decisionPanel({ example, answers, state, policy, extra = null })
   const d = example.decide(answers, { policy, state });
   return h(
     "section",
-    { class: "decision", "aria-label": "What your code decides" },
+    { class: "decision", "aria-label": t("results.decision.aria") },
     h("div", { class: "decision-head" }, tierChip(d.tone), h("h3", { class: "decision-title" }, d.headline)),
     h(
       "dl",
@@ -100,9 +101,9 @@ export function policyControls(policy, onChange) {
   return h(
     "div",
     { class: "policy" },
-    h("p", { class: "label" }, "Your policy: code, not model"),
-    h("label", { class: "policy-row", for: "policy-act" }, h("span", null, "Act at or above"), act, actOut),
-    h("label", { class: "policy-row", for: "policy-escalate" }, h("span", null, "Human below"), esc, escOut),
-    h("p", { class: "panel-note" }, "Drag the sliders: the tiers and the decision update instantly. The model is not called again."),
+    h("p", { class: "label" }, t("results.policy.title")),
+    h("label", { class: "policy-row", for: "policy-act" }, h("span", null, t("results.policy.act")), act, actOut),
+    h("label", { class: "policy-row", for: "policy-escalate" }, h("span", null, t("results.policy.human")), esc, escOut),
+    h("p", { class: "panel-note" }, t("results.policy.note")),
   );
 }

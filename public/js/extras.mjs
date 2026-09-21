@@ -1,6 +1,7 @@
 // Example-specific interactions that go beyond the generic result view.
 
 import { h } from "./dom.mjs";
+import { t } from "./i18n-state.mjs";
 import { PHISH_DEFAULTS, phishVerdict, rankLines } from "/lib/examples.mjs";
 import { renderAnswer, tierChip } from "./viz.mjs";
 
@@ -23,25 +24,26 @@ export function phishDecision({ answers }) {
 
   function render() {
     const { value, verdict } = phishVerdict(signals, weights, threshold);
-    const label = { phishing: "Likely phishing: quarantine", suspicious: "Suspicious: warn the reader", safe: "Looks legitimate: deliver" }[verdict];
+    // These labels duplicate PHISH.decide in lib/examples.mjs; T4 may deduplicate them.
+    const label = t(`extras.phish.verdict.${verdict}`);
     const tone = verdict === "suspicious" ? "confirm" : "act";
     verdictBox.replaceChildren(tierChip(tone), h("h3", { class: "decision-title" }, label));
     composite.replaceChildren(
-      h("span", { class: "label" }, `Composite score ${fixed(value)} vs threshold ${fixed(threshold)}`),
+      h("span", { class: "label" }, t("extras.phish.composite", { value: fixed(value), threshold: fixed(threshold) })),
       h(
         "div",
-        { class: "scale", role: "img", "aria-label": `Composite ${fixed(value)}` },
+        { class: "scale", role: "img", "aria-label": t("extras.phish.compositeAria", { value: fixed(value) }) },
         h("div", { class: "fill", style: { width: `${value * 100}%` } }),
         h("div", { class: "mark", style: { left: `${threshold * 100}%` } }),
         h("span", { class: "tick tick-0", style: { left: "0" } }, "0"),
         h("span", { class: "tick tick-1", style: { left: "100%" } }, "1"),
       ),
     );
-    counter.textContent = `Model calls: 1. Policy changes since: ${changes}. Every change was free.`;
+    counter.textContent = t("extras.phish.counter", { changes });
     facts.replaceChildren(
       ...Object.entries(signals).flatMap(([id, p]) => [
         h("dt", null, id),
-        h("dd", null, `${fixed(p)} × weight ${fixed(weights[id])} = ${fixed(p * weights[id])}`),
+        h("dd", null, t("extras.phish.fact", { p: fixed(p), weight: fixed(weights[id]), product: fixed(p * weights[id]) })),
       ]),
     );
   }
@@ -61,14 +63,14 @@ export function phishDecision({ answers }) {
   render();
   return h(
     "section",
-    { class: "decision", "aria-label": "What your code decides" },
+    { class: "decision", "aria-label": t("results.decision.aria") },
     verdictBox,
     composite,
     facts,
     h(
       "div",
       { class: "policy" },
-      h("p", { class: "label" }, "Your policy: weights and threshold"),
+      h("p", { class: "label" }, t("extras.phish.policy")),
       Object.keys(weights).map((id) => slider(id, id, () => weights[id], (v) => (weights[id] = v))),
       slider("threshold", "threshold", () => threshold, (v) => (threshold = v)),
       counter,
@@ -95,7 +97,7 @@ export function findAnswers({ answers, questions, state, policy }) {
   const raw = h(
     "details",
     null,
-    h("summary", null, `Show the ${ranked.length} raw score answers`),
+    h("summary", null, t("extras.find.raw", { n: ranked.length })),
     h("div", { class: "instruments" }, Object.entries(answers).map(([id, answer]) => renderAnswer({ id, question: questions[id], answer, policy }))),
   );
   return h("div", { class: "panel" }, list, raw);

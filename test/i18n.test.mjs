@@ -6,6 +6,8 @@ import {
   createT,
   detectLang,
   isSupported,
+  fillParts,
+  pluralKey,
 } from "../lib/i18n.mjs";
 import en from "../lib/i18n/en.mjs";
 import es from "../lib/i18n/es.mjs";
@@ -134,6 +136,56 @@ test("detectLang() handles empty or missing input", () => {
   assert.equal(detectLang(undefined, []), "en");
   assert.equal(detectLang(null, null), "en");
   assert.equal(detectLang(undefined, [undefined, 5, "es"]), "es");
+});
+
+test("fillParts() splits a template around its placeholders and keeps order", () => {
+  assert.deepEqual(fillParts("Read {a}, {b} and {c}.", { a: "A", b: "B", c: "C" }), [
+    "Read ",
+    "A",
+    ", ",
+    "B",
+    " and ",
+    "C",
+    ".",
+  ]);
+});
+
+test("fillParts() lets the template reorder its values", () => {
+  const values = { first: 1, second: 2 };
+  assert.deepEqual(fillParts("{first} then {second}", values), [1, " then ", 2]);
+  assert.deepEqual(fillParts("{second} luego {first}", values), [2, " luego ", 1]);
+});
+
+test("fillParts() passes non-string values (such as DOM nodes) through untouched", () => {
+  const node = { nodeType: 1 };
+  const parts = fillParts("see {link} now", { link: node });
+  assert.equal(parts[1], node);
+});
+
+test("fillParts() keeps falsy values such as 0 and leaves unknown placeholders as-is", () => {
+  assert.deepEqual(fillParts("{n} items {who}", { n: 0 }), [0, " items ", "{who}"]);
+  assert.deepEqual(fillParts("{x}", { x: null }), ["{x}"]);
+});
+
+test("fillParts() handles templates with no placeholders or no text", () => {
+  assert.deepEqual(fillParts("plain"), ["plain"]);
+  assert.deepEqual(fillParts(""), []);
+  assert.deepEqual(fillParts("{only}", { only: "v" }), ["v"]);
+});
+
+test("pluralKey() picks .one for exactly 1 and .other otherwise", () => {
+  assert.equal(pluralKey("en", "viz.more", 1), "viz.more.one");
+  assert.equal(pluralKey("en", "viz.more", 0), "viz.more.other");
+  assert.equal(pluralKey("en", "viz.more", 2), "viz.more.other");
+  assert.equal(pluralKey("es", "viz.more", 1), "viz.more.one");
+  assert.equal(pluralKey("es", "viz.more", 0), "viz.more.other");
+  assert.equal(pluralKey("es", "viz.more", 5), "viz.more.other");
+});
+
+test("pluralKey() maps any other plural category to .other and tolerates a bad language", () => {
+  // Spanish uses the "many" category for millions: it must still resolve to an existing key.
+  assert.equal(pluralKey("es", "viz.more", 1_000_000), "viz.more.other");
+  assert.equal(pluralKey("xx-not-a-lang-!!", "viz.more", 1), "viz.more.one");
 });
 
 // Parity: generic on purpose, so any key added later is checked automatically.

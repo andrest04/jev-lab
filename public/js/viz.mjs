@@ -4,34 +4,34 @@
 //   Score  -> ordered levels with a fractional position marker
 
 import { h, rich } from "./dom.mjs";
+import { t, getLang } from "./i18n-state.mjs";
+import { pluralKey } from "/lib/i18n.mjs";
 import { confidenceTier, noulVerdict } from "/lib/routing.mjs";
 
-export const TIER_LABEL = {
-  act: "Automatic",
-  confirm: "Needs a check",
-  escalate: "Human decides",
-};
+// The tier ids (act / confirm / escalate) are data; only their label is translated, and it
+// is resolved on every call so a language switch shows up the next time a view is built.
+export const tierLabel = (tier) => t(`viz.tier.${tier}`);
 
 const fixed = (n, d = 2) => Number(n).toFixed(d);
 const pct = (n) => `${Math.round(n * 100)}%`;
 
 export function tierChip(tier) {
-  return h("span", { class: `chip chip-${tier}` }, TIER_LABEL[tier]);
+  return h("span", { class: `chip chip-${tier}` }, tierLabel(tier));
 }
 
 export function confidenceMeter(confidence) {
   const on = Math.round(confidence * 10);
   return h(
     "span",
-    { class: "conf", title: `Confidence ${fixed(confidence)}` },
+    { class: "conf", title: t("viz.confidence.title", { value: fixed(confidence) }) },
     h("span", { class: "meter", "aria-hidden": "true" }, Array.from({ length: 10 }, (_, i) => h("i", { class: i < on ? "on" : "" }))),
-    `confidence ${fixed(confidence)}`,
+    t("viz.confidence.label", { value: fixed(confidence) }),
   );
 }
 
 function questionText(question) {
-  const t = question?.instructions;
-  return typeof t === "string" ? t : JSON.stringify(t);
+  const text = question?.instructions;
+  return typeof text === "string" ? text : JSON.stringify(text);
 }
 
 function header(id, type, question) {
@@ -55,7 +55,7 @@ export function renderAnswer(ctx) {
 function noulView({ id, question, answer }) {
   const p = answer.noul;
   const verdict = noulVerdict(p);
-  const verdictLabel = { yes: "Yes", no: "No", uncertain: "Torn" }[verdict];
+  const verdictLabel = { yes: t("viz.noul.yes"), no: t("viz.noul.no"), uncertain: t("viz.noul.torn") }[verdict];
   return h(
     "figure",
     { class: "inst inst-noul", style: { margin: "0" } },
@@ -68,15 +68,15 @@ function noulView({ id, question, answer }) {
     ),
     h(
       "div",
-      { class: "scale", role: "img", "aria-label": `Probability of yes: ${fixed(p)}` },
+      { class: "scale", role: "img", "aria-label": t("viz.noul.aria", { value: fixed(p) }) },
       h("div", { class: "band" }),
       h("div", { class: "fill", style: { width: `${p * 100}%` } }),
       h("div", { class: "mark", style: { left: `${p * 100}%` } }),
-      h("span", { class: "tick tick-0", style: { left: "0" } }, "0 no"),
-      h("span", { class: "tick", style: { left: "50%" } }, "0.5 torn"),
-      h("span", { class: "tick tick-1", style: { left: "100%" } }, "1 yes"),
+      h("span", { class: "tick tick-0", style: { left: "0" } }, t("viz.noul.tick0")),
+      h("span", { class: "tick", style: { left: "50%" } }, t("viz.noul.tick05")),
+      h("span", { class: "tick tick-1", style: { left: "100%" } }, t("viz.noul.tick1")),
     ),
-    h("p", { class: "inst-note" }, "A noul has no confidence field. Read the probability itself: near 0.5 means yes and no are about equally likely, not “medium”."),
+    h("p", { class: "inst-note" }, t("viz.noul.note")),
   );
 }
 
@@ -108,7 +108,7 @@ function choiceView({ id, question, answer, policy }) {
           h("span", { class: "bar-pct" }, pct(p)),
         ),
       ),
-      hidden > 0 ? h("p", { class: "inst-note" }, `+ ${hidden} more options with lower probability`) : null,
+      hidden > 0 ? h("p", { class: "inst-note" }, t(pluralKey(getLang(), "viz.choice.more", hidden), { n: hidden })) : null,
     ),
   );
 }
@@ -126,7 +126,7 @@ function scoreView({ id, question, answer, policy }) {
       "div",
       { class: "readout" },
       h("span", { class: "num" }, fixed(answer.score)),
-      h("span", { class: "muted small" }, `on 0 to ${n - 1}, nearest: ${answer.legend[String(near)]}`),
+      h("span", { class: "muted small" }, t("viz.score.range", { max: n - 1, legend: answer.legend[String(near)] })),
       confidenceMeter(answer.confidence),
       tierChip(tier),
     ),

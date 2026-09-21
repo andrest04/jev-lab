@@ -1,4 +1,5 @@
 import { h } from "./dom.mjs";
+import { t } from "./i18n-state.mjs";
 import { renderAnswer } from "./viz.mjs";
 import { EXAMPLES, DEFAULT_POLICY, getExample } from "/lib/examples.mjs";
 import { expandSample } from "/lib/fixtures.mjs";
@@ -21,22 +22,22 @@ export function HomeView(status) {
       "section",
       { class: "hero" },
       h("p", { class: "eyebrow" }, "TypeSafe · Jev"),
-      h("h1", { class: "h-display" }, "Judgments you can branch on"),
-      h("p", { class: "lede" }, "Jev reads text or JSON and answers typed questions with probabilities. No prose to parse, and your code stays in control. Learn it by running it."),
-      h("div", { class: "hero-cta" }, h("a", { class: "btn btn-primary", href: "#/examples/ticket-desk" }, "Try the ticket desk"), h("a", { class: "btn", href: "#/playground" }, "Open the playground")),
+      h("h1", { class: "h-display" }, t("home.hero.title")),
+      h("p", { class: "lede" }, t("home.hero.lede")),
+      h("div", { class: "hero-cta" }, h("a", { class: "btn btn-primary", href: "#/examples/ticket-desk" }, t("home.hero.ctaTicketDesk")), h("a", { class: "btn", href: "#/playground" }, t("home.hero.ctaPlayground"))),
     ),
 
     h(
       "section",
-      { "aria-label": "The three answer types" },
+      { "aria-label": t("home.answerTypes.aria") },
       h("div", { class: "strip" }, pick("churn"), pick("team"), pick("frustration")),
-      h("p", { class: "panel-note", style: { marginTop: "8px" } }, "Noul, Choice and Score, drawn from a hand-written sample answer to show the shape. Not model output."),
+      h("p", { class: "panel-note", style: { marginTop: "8px" } }, t("home.answerTypes.note")),
     ),
 
     h(
       "section",
       { class: "panel" },
-      h("div", { class: "panel-h" }, h("h2", { class: "h-section" }, "Worked examples"), h("span", { class: "panel-note" }, live ? "Live: runs call Jev" : "No API key: presets replay hand-written samples")),
+      h("div", { class: "panel-h" }, h("h2", { class: "h-section" }, t("home.examples.title")), h("span", { class: "panel-note" }, live ? t("home.examples.note.live") : t("home.examples.note.demo"))),
       h(
         "div",
         { class: "exlist" },
@@ -55,9 +56,9 @@ export function HomeView(status) {
     h(
       "section",
       { class: "steps" },
-      h("div", null, h("h3", null, "Read the questions"), h("p", { class: "muted" }, "Each example shows the exact typed questions and the JSON request they produce.")),
-      h("div", null, h("h3", null, "Run it"), h("p", { class: "muted" }, live ? "Runs go to Jev through this server. The key never reaches the browser." : "Without a key, presets replay clearly labeled samples. Set TYPESAFE_API_KEY to run Jev on any input.")),
-      h("div", null, h("h3", null, "Change the policy"), h("p", { class: "muted" }, "Thresholds and weights live in code. Move the sliders and the decision updates without another model call.")),
+      h("div", null, h("h3", null, t("home.steps.read.title")), h("p", { class: "muted" }, t("home.steps.read.text"))),
+      h("div", null, h("h3", null, t("home.steps.run.title")), h("p", { class: "muted" }, live ? t("home.steps.run.text.live") : t("home.steps.run.text.demo"))),
+      h("div", null, h("h3", null, t("home.steps.policy.title")), h("p", { class: "muted" }, t("home.steps.policy.text"))),
     ),
   );
 }
