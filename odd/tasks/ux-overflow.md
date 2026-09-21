@@ -36,7 +36,7 @@ CSS in `public/styles.css` only. Do not restyle tokens or change copy.
 - Engram mirror: pending (session bind failed this turn).
 
 ## Evidence
-- T1: `public/styles.css`. `node --test` 160 pass / 0 fail. Runtime harness: N/A (no browser test runner; layout is CSS). Rollback boundary: `public/styles.css` and this file.
+- T1: commit `074734c`. `public/styles.css`. `node --test` 160 pass / 0 fail. Runtime harness: N/A (no browser test runner; layout is CSS). Rollback boundary: `public/styles.css` and this file.
 
 ## Next step
-Work-unit commit on `feat/ux-overflow`. User reviews in Chrome at ~360px, ES, both themes.
+User reviews in Chrome at ~360px, ES, both themes. Push/PR remain a user decision.
