@@ -32,6 +32,12 @@ of how Jev behaves.
 
 Three answer modes are always labeled in the UI: **live** (real Jev), **sample** (hand-written illustrations for preset inputs) and **demo** (keyword heuristic in the playground).
 
+## Languages
+
+The UI is English and Spanish. Pick a language in the top bar; the choice is stored as `jev-lang` and also follows the browser on first visit.
+
+Technical terms stay in English in both languages (`noul`, `choice`, `score`, `confidence`, Playground, pattern names, API/env names). Question instructions, criteria, preset state, and anything you type in the Playground stay in English: that is what Jev receives.
+
 ## Test
 
 ```bash

@@ -13,7 +13,7 @@ The user wants to learn how Jev works, how it is used, and how it can be impleme
 - The browser never sees the API key. Only the server reads `TYPESAFE_API_KEY`.
 - Demo engine is a keyword heuristic and is never presented as Jev output.
 - Confidence is never recomputed for live results; it comes from the API.
-- Artifacts (code, UI copy, comments) are in English.
+- Artifacts (code, comments) are in English. UI copy is English and Spanish; the technical glossary stays English in both. Model inputs (question instructions/criteria, preset state, Playground drafts) stay English.
 
 ## Sources (live docs, read 2026-09-20)
 - POST https://api.typesafe.ai/v1/systemone, Bearer auth, body `{state, model, questions}`
