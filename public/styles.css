@@ -161,7 +161,31 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .nav a:hover { color: var(--ink); background: var(--sunk); }
 .nav a[aria-current="page"] { color: var(--ink); box-shadow: inset 0 -2px 0 var(--accent); border-radius: 4px 4px 0 0; }
 
-.topbar-tools { display: flex; align-items: center; gap: 10px; }
+.topbar-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; }
+
+.langswitch {
+  display: inline-flex;
+  height: 36px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.langbtn {
+  min-width: 36px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+  font: 500 12px var(--mono);
+  letter-spacing: 0.04em;
+}
+
+.langbtn:hover { color: var(--ink); background: var(--sunk); }
+.langbtn[aria-pressed="true"] { background: var(--ink); color: var(--ground); }
+.langbtn:focus-visible { outline-offset: -2px; }
 
 .pill {
   display: inline-flex;
