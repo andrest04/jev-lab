@@ -4,6 +4,7 @@ import { h } from "./dom.mjs";
 import { t } from "./i18n-state.mjs";
 import { renderAnswer, tierChip } from "./viz.mjs";
 import { costUsd, formatUsd } from "/lib/cost.mjs";
+import { errorText } from "/lib/error-text.mjs";
 
 const fixed = (n, d = 2) => Number(n).toFixed(d);
 
@@ -39,11 +40,13 @@ export function runBanner(run) {
 }
 
 export function errorBanner(error) {
-  const list = (error.errors ?? []).map((e) => h("li", null, h("code", null, e.path || "request"), ": ", e.message));
+  const list = (error.errors ?? []).map((e) =>
+    h("li", null, h("code", null, e.path || t("errors.path.request")), ": ", errorText(e, t)),
+  );
   return h(
     "div",
     { class: "banner banner-error", role: "alert" },
-    h("strong", null, error.message),
+    h("strong", null, errorText(error, t)),
     list.length ? h("ul", null, list) : null,
   );
 }

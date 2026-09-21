@@ -1,6 +1,8 @@
 // Tiny DOM helper. Everything is built with createElement and text nodes, so user
 // content can never be interpreted as markup.
 
+import { t } from "./i18n-state.mjs";
+
 const PROPERTIES = new Set(["value", "checked", "disabled", "hidden", "selected", "readOnly", "open"]);
 
 /**
@@ -54,11 +56,11 @@ export async function copyText(text) {
 }
 
 /** A code block with a copy button. */
-export function codeBlock(text, { label = "Copy" } = {}) {
+export function codeBlock(text, { label = t("copy.button") } = {}) {
   const button = h("button", { class: "btn btn-small btn-quiet copy", type: "button" }, label);
   button.addEventListener("click", async () => {
     const ok = await copyText(text);
-    button.textContent = ok ? "Copied" : "Copy failed";
+    button.textContent = ok ? t("copy.copied") : t("copy.failed");
     setTimeout(() => (button.textContent = label), 1400);
   });
   return h("div", { class: "code-wrap" }, button, h("pre", { class: "code" }, text));

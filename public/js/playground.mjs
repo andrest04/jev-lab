@@ -9,6 +9,7 @@ import { EXAMPLES, DEFAULT_POLICY, exampleCopy } from "/lib/examples.mjs";
 import { buildRequest, validateRequest, LIMITS, MODELS } from "/lib/questions.mjs";
 import { toCurl, toFetch, toPython } from "/lib/codegen.mjs";
 import { CONTEXT_TOKENS, PRICING, costUsd, estimateRequestTokens, formatUsd } from "/lib/cost.mjs";
+import { errorText } from "/lib/error-text.mjs";
 
 let uid = 0;
 const nextKey = () => `q${++uid}`;
@@ -88,8 +89,19 @@ function toRequest(draft) {
   const problems = [];
   draft.questions.forEach((q, i) => {
     const id = q.id.trim();
-    if (!id) problems.push({ path: `questions[${i}]`, message: "Give every question an id, so your code can find its answer." });
-    else if (id in questions) problems.push({ path: `questions.${id}`, message: "Question ids must be unique." });
+    if (!id) {
+      problems.push({
+        path: `questions[${i}]`,
+        message: "Give every question an id, so your code can find its answer.",
+        code: "question_id_missing",
+      });
+    } else if (id in questions) {
+      problems.push({
+        path: `questions.${id}`,
+        message: "Question ids must be unique.",
+        code: "question_id_duplicate",
+      });
+    }
     else questions[id] = toQuestion(q);
   });
   return { request: buildRequest({ state: parseStateValue(draft.state), model: draft.model, questions }), problems };
@@ -143,13 +155,17 @@ export function PlaygroundView(status) {
   const exampleSelect = h(
     "select",
     { id: "pg-example", class: "field" },
-    h("option", { value: "" }, "Start from an example…"),
+    h("option", { value: "" }, t("playground.example.placeholder")),
     EXAMPLES.map((e) => h("option", { value: e.id }, exampleCopy(e.id, "title", t))),
   );
   const questionsHost = h("div");
   const budgetBox = h("div", { class: "budget" });
   const problemsBox = h("div", { "aria-live": "polite" });
-  const runButton = h("button", { class: "btn btn-primary", type: "button" }, live ? "Run with Jev" : "Run demo engine");
+  const runButton = h(
+    "button",
+    { class: "btn btn-primary", type: "button" },
+    live ? t("example.run.live") : t("playground.run.demo"),
+  );
   const paneHost = h("div", { class: "panel" });
   const tabsBox = h("div", { class: "tabs", role: "tablist" });
   const answersHost = h("div", { class: "panel", "aria-live": "polite" });
@@ -171,19 +187,42 @@ export function PlaygroundView(status) {
     const check = validateRequest(request);
     const all = [...problems, ...check.errors];
 
-    stateNote.textContent = typeof request.state === "string" ? "Sent as text." : "Sent as JSON. Reference values with backticked paths such as `ticket.message`.";
+    stateNote.textContent =
+      typeof request.state === "string" ? t("playground.state.sentText") : t("playground.state.sentJson");
 
     const tokens = estimateRequestTokens(request);
     const share = Math.min(100, (tokens / CONTEXT_TOKENS) * 100);
     mount(
       budgetBox,
-      h("span", null, `≈ ${tokens.toLocaleString()} input tokens (estimate) · ${share < 0.1 ? "<0.1" : share.toFixed(1)}% of the ${CONTEXT_TOKENS.toLocaleString()} token context · about ${formatUsd((tokens * PRICING.usdPerBillionInputTokens) / 1e9)}`),
+      h(
+        "span",
+        null,
+        t("playground.budget", {
+          tokens: tokens.toLocaleString(),
+          share: share < 0.1 ? "<0.1" : share.toFixed(1),
+          context: CONTEXT_TOKENS.toLocaleString(),
+          cost: formatUsd((tokens * PRICING.usdPerBillionInputTokens) / 1e9),
+        }),
+      ),
       h("div", { class: "budget-bar" }, h("i", { style: { width: `${Math.max(share, 0.5)}%` } })),
     );
 
     mount(
       problemsBox,
-      all.length ? h("div", { class: "banner banner-error" }, h("strong", null, "Fix before running"), h("ul", null, all.map((e) => h("li", null, h("code", null, e.path || "request"), ": ", e.message)))) : null,
+      all.length
+        ? h(
+            "div",
+            { class: "banner banner-error" },
+            h("strong", null, t("playground.problems.title")),
+            h(
+              "ul",
+              null,
+              all.map((e) =>
+                h("li", null, h("code", null, e.path || t("errors.path.request")), ": ", errorText(e, t)),
+              ),
+            ),
+          )
+        : null,
     );
     runButton.disabled = busy || all.length > 0;
     if (tab === "request" || tab === "code") renderPane();
@@ -202,12 +241,16 @@ export function PlaygroundView(status) {
     mount(
       questionsHost,
       draft.questions.map((q, index) => questionCard(q, index)),
-      h("button", { class: "btn btn-small", type: "button", onClick: addQuestion }, "+ Add question"),
+      h("button", { class: "btn btn-small", type: "button", onClick: addQuestion }, t("playground.addQuestion")),
     );
   }
 
   function questionCard(q, index) {
-    const typeSelect = h("select", { class: "field", id: `${q.key}-type`, "aria-label": "Type" }, ["noul", "choice", "score"].map((t) => h("option", { value: t, selected: t === q.type }, t)));
+    const typeSelect = h(
+      "select",
+      { class: "field", id: `${q.key}-type`, "aria-label": t("playground.type") },
+      ["noul", "choice", "score"].map((type) => h("option", { value: type, selected: type === q.type }, type)),
+    );
     typeSelect.addEventListener("change", () => {
       q.type = typeSelect.value;
       renderQuestions();
@@ -225,11 +268,11 @@ export function PlaygroundView(status) {
       h(
         "div",
         { class: "qcard-top" },
-        h("div", null, h("label", { class: "label", for: `${q.key}-id` }, "Question id"), input({ id: `${q.key}-id`, value: q.id, spellcheck: "false" }, (v) => ((q.id = v), refresh()))),
-        h("div", null, h("label", { class: "label", for: `${q.key}-type` }, "Type"), typeSelect),
-        h("button", { class: "btn btn-small btn-quiet", type: "button", "aria-label": `Remove question ${index + 1}`, onClick: () => removeQuestion(q.key) }, "Remove"),
+        h("div", null, h("label", { class: "label", for: `${q.key}-id` }, t("playground.questionId")), input({ id: `${q.key}-id`, value: q.id, spellcheck: "false" }, (v) => ((q.id = v), refresh()))),
+        h("div", null, h("label", { class: "label", for: `${q.key}-type` }, t("playground.type")), typeSelect),
+        h("button", { class: "btn btn-small btn-quiet", type: "button", "aria-label": t("playground.aria.removeQuestion", { n: index + 1 }), onClick: () => removeQuestion(q.key) }, t("playground.remove")),
       ),
-      h("div", null, h("label", { class: "label", for: `${q.key}-instr` }, "Instructions: the exact condition to judge"), instructions),
+      h("div", null, h("label", { class: "label", for: `${q.key}-instr` }, t("playground.instructions")), instructions),
       criteriaEditor(q),
     );
   }
@@ -239,17 +282,17 @@ export function PlaygroundView(status) {
       return h(
         "div",
         { class: "rows" },
-        h("p", { class: "label" }, `Options (${LIMITS.minChoiceOptions} to ${LIMITS.maxChoiceOptions}), each with an optional description`),
+        h("p", { class: "label" }, t("playground.options.label", { min: LIMITS.minChoiceOptions, max: LIMITS.maxChoiceOptions })),
         q.options.map((o, i) =>
           h(
             "div",
             { class: "row2" },
-            input({ value: o.name, placeholder: "option", "aria-label": `Option ${i + 1} name`, spellcheck: "false" }, (v) => ((o.name = v), refresh())),
-            input({ value: o.desc, placeholder: "what belongs here", "aria-label": `Option ${i + 1} description` }, (v) => ((o.desc = v), refresh())),
-            h("button", { class: "btn btn-small btn-quiet", type: "button", "aria-label": `Remove option ${i + 1}`, onClick: () => ((q.options = q.options.filter((x) => x !== o)), renderQuestions(), refresh()) }, "×"),
+            input({ value: o.name, placeholder: t("playground.option.placeholder"), "aria-label": t("playground.aria.optionName", { n: i + 1 }), spellcheck: "false" }, (v) => ((o.name = v), refresh())),
+            input({ value: o.desc, placeholder: t("playground.option.descPlaceholder"), "aria-label": t("playground.aria.optionDesc", { n: i + 1 }) }, (v) => ((o.desc = v), refresh())),
+            h("button", { class: "btn btn-small btn-quiet", type: "button", "aria-label": t("playground.aria.removeOption", { n: i + 1 }), onClick: () => ((q.options = q.options.filter((x) => x !== o)), renderQuestions(), refresh()) }, "×"),
           ),
         ),
-        h("button", { class: "btn btn-small", type: "button", onClick: () => (q.options.push({ name: "", desc: "" }), renderQuestions(), refresh()) }, "+ Add option"),
+        h("button", { class: "btn btn-small", type: "button", onClick: () => (q.options.push({ name: "", desc: "" }), renderQuestions(), refresh()) }, t("playground.addOption")),
       );
     }
     if (q.type === "score") {
@@ -263,29 +306,29 @@ export function PlaygroundView(status) {
       return h(
         "div",
         { class: "rows" },
-        h("p", { class: "label" }, `Levels, lowest first (${LIMITS.minScoreLevels} to ${LIMITS.maxScoreLevels}). Describe concrete situations.`),
+        h("p", { class: "label" }, t("playground.levels.label", { min: LIMITS.minScoreLevels, max: LIMITS.maxScoreLevels })),
         q.levels.map((text, i) =>
           h(
             "div",
             { class: "row1" },
-            input({ value: text, placeholder: `level ${i}`, "aria-label": `Level ${i}` }, (v) => ((q.levels[i] = v), refresh())),
-            h("button", { class: "btn btn-small btn-quiet", type: "button", "aria-label": `Move level ${i} up`, onClick: () => move(i, -1) }, "↑"),
-            h("button", { class: "btn btn-small btn-quiet", type: "button", "aria-label": `Move level ${i} down`, onClick: () => move(i, 1) }, "↓"),
-            h("button", { class: "btn btn-small btn-quiet", type: "button", "aria-label": `Remove level ${i}`, onClick: () => ((q.levels = q.levels.filter((_, k) => k !== i)), renderQuestions(), refresh()) }, "×"),
+            input({ value: text, placeholder: t("playground.level.placeholder", { i }), "aria-label": t("playground.level.placeholder", { i }) }, (v) => ((q.levels[i] = v), refresh())),
+            h("button", { class: "btn btn-small btn-quiet", type: "button", "aria-label": t("playground.aria.moveLevelUp", { i }), onClick: () => move(i, -1) }, "↑"),
+            h("button", { class: "btn btn-small btn-quiet", type: "button", "aria-label": t("playground.aria.moveLevelDown", { i }), onClick: () => move(i, 1) }, "↓"),
+            h("button", { class: "btn btn-small btn-quiet", type: "button", "aria-label": t("playground.aria.removeLevel", { i }), onClick: () => ((q.levels = q.levels.filter((_, k) => k !== i)), renderQuestions(), refresh()) }, "×"),
           ),
         ),
-        h("button", { class: "btn btn-small", type: "button", onClick: () => (q.levels.push(""), renderQuestions(), refresh()) }, "+ Add level"),
+        h("button", { class: "btn btn-small", type: "button", onClick: () => (q.levels.push(""), renderQuestions(), refresh()) }, t("playground.addLevel")),
       );
     }
     return h(
       "details",
       null,
-      h("summary", null, "Optional true/false criteria"),
+      h("summary", null, t("playground.noul.criteria")),
       h(
         "div",
         { class: "rows", style: { marginTop: "8px" } },
-        input({ value: q.trueText, placeholder: "when the answer is yes", "aria-label": "Criteria for true" }, (v) => ((q.trueText = v), refresh())),
-        input({ value: q.falseText, placeholder: "when the answer is no", "aria-label": "Criteria for false" }, (v) => ((q.falseText = v), refresh())),
+        input({ value: q.trueText, placeholder: t("playground.noul.truePlaceholder"), "aria-label": t("playground.aria.criteriaTrue") }, (v) => ((q.trueText = v), refresh())),
+        input({ value: q.falseText, placeholder: t("playground.noul.falsePlaceholder"), "aria-label": t("playground.aria.criteriaFalse") }, (v) => ((q.falseText = v), refresh())),
       ),
     );
   }
@@ -310,7 +353,7 @@ export function PlaygroundView(status) {
     busy = true;
     error = null;
     runButton.disabled = true;
-    runButton.textContent = "Running…";
+    runButton.textContent = t("example.run.running");
     try {
       const run = await runRequest(request);
       last = { run, request };
@@ -319,7 +362,7 @@ export function PlaygroundView(status) {
       last = null;
     } finally {
       busy = false;
-      runButton.textContent = live ? "Run with Jev" : "Run demo engine";
+      runButton.textContent = live ? t("example.run.live") : t("playground.run.demo");
     }
     refresh();
     setTab("answers");
@@ -328,10 +371,10 @@ export function PlaygroundView(status) {
   // --- Output tabs ------------------------------------------------------------------
 
   const TABS = [
-    ["answers", "Answers"],
-    ["request", "Request"],
-    ["code", "Code"],
-    ["raw", "Raw response"],
+    ["answers", t("playground.tab.answers")],
+    ["request", t("playground.tab.request")],
+    ["code", t("playground.tab.code")],
+    ["raw", t("playground.tab.raw")],
   ];
 
   function setTab(next) {
@@ -350,7 +393,7 @@ export function PlaygroundView(status) {
   function renderAnswers() {
     if (error) return mount(answersHost, errorBanner(error));
     if (!last) {
-      return mount(answersHost, h("div", { class: "empty" }, live ? "Press Run to ask Jev. Answers appear here as instruments." : "Press Run to try the demo engine. Add a TYPESAFE_API_KEY to use Jev itself."));
+      return mount(answersHost, h("div", { class: "empty" }, live ? t("playground.empty.live") : t("playground.empty.demo")));
     }
     mount(answersHost, runBanner(last.run), instruments({ questions: last.request.questions, answers: last.run.response.answers, policy }));
   }
@@ -366,12 +409,16 @@ export function PlaygroundView(status) {
       const snippets = { curl: toCurl(request), fetch: toFetch(request), python: toPython(request) };
       const langs = h(
         "div",
-        { class: "chips", role: "group", "aria-label": "Language" },
-        [["curl", "curl"], ["fetch", "JavaScript (fetch)"], ["python", "Python SDK"]].map(([id, label]) => h("button", { class: "chip-btn", type: "button", "aria-pressed": String(codeLang === id), onClick: () => ((codeLang = id), renderPane()) }, label)),
+        { class: "chips", role: "group", "aria-label": t("playground.code.language") },
+        [
+          ["curl", t("playground.code.curl")],
+          ["fetch", t("playground.code.fetch")],
+          ["python", t("playground.code.python")],
+        ].map(([id, label]) => h("button", { class: "chip-btn", type: "button", "aria-pressed": String(codeLang === id), onClick: () => ((codeLang = id), renderPane()) }, label)),
       );
-      return mount(paneHost, langs, codeBlock(snippets[codeLang]), h("p", { class: "panel-note" }, "The key comes from TYPESAFE_API_KEY. Keep it on a server: never call this endpoint from a browser."));
+      return mount(paneHost, langs, codeBlock(snippets[codeLang]), h("p", { class: "panel-note" }, t("playground.code.keyNote")));
     }
-    mount(paneHost, last ? codeBlock(JSON.stringify(last.run.response, null, 2)) : h("div", { class: "empty" }, "Run a request to see the raw response."));
+    mount(paneHost, last ? codeBlock(JSON.stringify(last.run.response, null, 2)) : h("div", { class: "empty" }, t("playground.empty.raw")));
   }
 
   // --- Wiring -----------------------------------------------------------------------
@@ -404,9 +451,9 @@ export function PlaygroundView(status) {
     h(
       "header",
       { class: "ex-head" },
-      h("p", { class: "eyebrow" }, "Playground"),
-      h("h1", { class: "ex-title" }, "Ask anything, typed"),
-      h("p", { class: "lede" }, "Write the state, add typed questions, and see the request Jev receives. Every answer is a probability your code can branch on."),
+      h("p", { class: "eyebrow" }, t("playground.eyebrow")),
+      h("h1", { class: "ex-title" }, t("playground.title")),
+      h("p", { class: "lede" }, t("playground.lede")),
     ),
     h(
       "div",
@@ -417,18 +464,18 @@ export function PlaygroundView(status) {
         h(
           "section",
           { class: "panel" },
-          h("div", { class: "panel-h" }, h("h2", { class: "h-section" }, "State"), h("div", { style: { minWidth: "200px" } }, h("label", { class: "label", for: "pg-example" }, "Load"), exampleSelect)),
-          h("label", { class: "label", for: "pg-state" }, "Text or JSON"),
+          h("div", { class: "panel-h" }, h("h2", { class: "h-section" }, t("playground.panel.state")), h("div", { style: { minWidth: "200px" } }, h("label", { class: "label", for: "pg-example" }, t("playground.panel.load")), exampleSelect)),
+          h("label", { class: "label", for: "pg-state" }, t("playground.panel.stateLabel")),
           stateInput,
           stateNote,
         ),
-        h("section", { class: "panel" }, h("div", { class: "panel-h" }, h("h2", { class: "h-section" }, "Questions"), h("span", { class: "panel-note" }, "Independent and parallel")), questionsHost),
-        h("section", { class: "panel" }, h("div", { class: "panel-h" }, h("h2", { class: "h-section" }, "Model")), h("label", { class: "label", for: "pg-model" }, "Model"), modelSelect),
+        h("section", { class: "panel" }, h("div", { class: "panel-h" }, h("h2", { class: "h-section" }, t("playground.panel.questions")), h("span", { class: "panel-note" }, t("playground.panel.questionsNote"))), questionsHost),
+        h("section", { class: "panel" }, h("div", { class: "panel-h" }, h("h2", { class: "h-section" }, t("playground.panel.model"))), h("label", { class: "label", for: "pg-model" }, t("playground.panel.model")), modelSelect),
       ),
       h(
         "div",
         { class: "col" },
-        h("section", { class: "panel" }, h("div", { class: "panel-h" }, h("h2", { class: "h-section" }, "Run"), runButton), budgetBox, problemsBox),
+        h("section", { class: "panel" }, h("div", { class: "panel-h" }, h("h2", { class: "h-section" }, t("playground.panel.run")), runButton), budgetBox, problemsBox),
         h("section", { class: "panel" }, tabsBox, paneHost),
       ),
     ),

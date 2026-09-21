@@ -127,3 +127,25 @@ test("validateRequest() rejects non-object requests without throwing", () => {
   assert.equal(validateRequest(null).ok, false);
   assert.equal(validateRequest("nope").ok, false);
 });
+
+test("validateRequest() adds stable codes without changing English messages", () => {
+  const state = validateRequest({ state: "  ", model: "jev-latest", questions: { q: noul("q?") } });
+  const stateErr = state.errors.find((e) => e.path === "state");
+  assert.equal(stateErr.code, "state_required");
+  assert.equal(
+    stateErr.message,
+    "State is required. Give the model the text or JSON it should judge.",
+  );
+
+  const empty = validateRequest({ state: "x", model: "jev-latest", questions: {} });
+  const questionsErr = empty.errors.find((e) => e.path === "questions");
+  assert.equal(questionsErr.code, "questions_empty");
+  assert.equal(questionsErr.message, "Add at least one question.");
+
+  const few = validateRequest(
+    buildRequest({ state: "x", questions: { q: choice("Pick", { only: null }) } }),
+  );
+  const choiceErr = few.errors.find((e) => e.path === "questions.q.criteria");
+  assert.equal(choiceErr.code, "choice_too_few");
+  assert.equal(choiceErr.message, `A choice needs at least ${LIMITS.minChoiceOptions} options.`);
+});
