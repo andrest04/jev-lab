@@ -1,7 +1,7 @@
 import { h } from "./dom.mjs";
 import { t } from "./i18n-state.mjs";
 import { renderAnswer } from "./viz.mjs";
-import { EXAMPLES, DEFAULT_POLICY, getExample } from "/lib/examples.mjs";
+import { EXAMPLES, DEFAULT_POLICY, getExample, exampleCopy } from "/lib/examples.mjs";
 import { expandSample } from "/lib/fixtures.mjs";
 
 export function HomeView(status) {
@@ -45,8 +45,8 @@ export function HomeView(status) {
           h(
             "a",
             { class: "exrow", href: `#/examples/${e.id}` },
-            h("span", { class: "exrow-title" }, e.title),
-            h("span", { class: "exrow-tag" }, e.tagline),
+            h("span", { class: "exrow-title" }, exampleCopy(e.id, "title", t)),
+            h("span", { class: "exrow-tag" }, exampleCopy(e.id, "tagline", t)),
             h("span", { class: "exrow-meta" }, h("span", { class: "tag" }, e.pattern), e.primitives.map((p) => h("span", { class: "tag" }, p))),
           ),
         ),

@@ -3,8 +3,9 @@
 import { h, mount, codeBlock } from "./dom.mjs";
 import { runRequest } from "./api.mjs";
 import { store } from "./store.mjs";
+import { t } from "./i18n-state.mjs";
 import { runBanner, errorBanner, instruments, policyControls } from "./results.mjs";
-import { EXAMPLES, DEFAULT_POLICY } from "/lib/examples.mjs";
+import { EXAMPLES, DEFAULT_POLICY, exampleCopy } from "/lib/examples.mjs";
 import { buildRequest, validateRequest, LIMITS, MODELS } from "/lib/questions.mjs";
 import { toCurl, toFetch, toPython } from "/lib/codegen.mjs";
 import { CONTEXT_TOKENS, PRICING, costUsd, estimateRequestTokens, formatUsd } from "/lib/cost.mjs";
@@ -143,7 +144,7 @@ export function PlaygroundView(status) {
     "select",
     { id: "pg-example", class: "field" },
     h("option", { value: "" }, "Start from an example…"),
-    EXAMPLES.map((e) => h("option", { value: e.id }, e.title)),
+    EXAMPLES.map((e) => h("option", { value: e.id }, exampleCopy(e.id, "title", t))),
   );
   const questionsHost = h("div");
   const budgetBox = h("div", { class: "budget" });

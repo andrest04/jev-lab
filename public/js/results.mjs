@@ -62,7 +62,7 @@ export function instruments({ questions, answers, policy }) {
  * @param {{ example: any, answers: any, state: any, policy: any, extra?: Node | null }} ctx
  */
 export function decisionPanel({ example, answers, state, policy, extra = null }) {
-  const d = example.decide(answers, { policy, state });
+  const d = example.decide(answers, { policy, state, t });
   return h(
     "section",
     { class: "decision", "aria-label": t("results.decision.aria") },

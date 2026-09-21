@@ -5,7 +5,7 @@ import { ExampleView } from "./example-view.mjs";
 import { PlaygroundView } from "./playground.mjs";
 import { LearnView } from "./learn.mjs";
 import { t, getLang, setLang, onLangChange } from "./i18n-state.mjs";
-import { getExample } from "/lib/examples.mjs";
+import { getExample, exampleCopy } from "/lib/examples.mjs";
 import { SUPPORTED_LANGS } from "/lib/i18n.mjs";
 
 const app = document.getElementById("app");
@@ -136,7 +136,7 @@ function route({ keepScroll = false } = {}) {
   if (section === "examples" && getExample(id)) {
     const example = getExample(id);
     view = ExampleView(example, status);
-    title = t("title.example", { title: example.title });
+    title = t("title.example", { title: exampleCopy(id, "title", t) });
   } else if (section === "playground") {
     view = PlaygroundView(status);
     key = "playground";

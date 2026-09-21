@@ -5,10 +5,12 @@ import { runRequest } from "./api.mjs";
 import { store } from "./store.mjs";
 import { runBanner, errorBanner, instruments, decisionPanel, policyControls } from "./results.mjs";
 import { EXTRAS } from "./extras.mjs";
-import { DEFAULT_POLICY } from "/lib/examples.mjs";
+import { t, getLang } from "./i18n-state.mjs";
+import { DEFAULT_POLICY, exampleCopy } from "/lib/examples.mjs";
 import { buildRequest, validateRequest } from "/lib/questions.mjs";
 import { expandSample } from "/lib/fixtures.mjs";
 import { toCurl } from "/lib/codegen.mjs";
+import { pluralKey } from "/lib/i18n.mjs";
 
 const pretty = (value) => JSON.stringify(value, null, 2);
 
@@ -31,7 +33,7 @@ export function ExampleView(example, status) {
 
   const stateInput = h("textarea", { id: "state-input", class: "field", rows: 9, spellcheck: "false", "aria-describedby": "state-note" });
   const stateNote = h("p", { id: "state-note", class: "panel-note", "aria-live": "polite" });
-  const presetsBox = h("div", { class: "chips", role: "group", "aria-label": "Presets" });
+  const presetsBox = h("div", { class: "chips", role: "group", "aria-label": t("example.presets.aria") });
   const questionsBox = h("div", { class: "qlist" });
   const requestBox = h("div", { class: "panel" });
   const runButton = h("button", { class: "btn btn-primary", type: "button" });
@@ -47,17 +49,17 @@ export function ExampleView(example, status) {
   // The policy sliders stay mounted while the decision above them is redrawn, so
   // dragging one is never interrupted.
   policyEl.hidden = !example.usesPolicy;
-  const decisionBox = h("section", { class: "panel" }, h("div", { class: "panel-h" }, h("h2", { class: "h-section" }, "Your code decides")), decisionHost, policyEl);
+  const decisionBox = h("section", { class: "panel" }, h("div", { class: "panel-h" }, h("h2", { class: "h-section" }, t("example.decision.title"))), decisionHost, policyEl);
 
   // --- State handling -------------------------------------------------------
 
   function parseState() {
     try {
       const value = JSON.parse(stateInput.value);
-      if (value === null || typeof value !== "object") throw new Error("State must be a JSON object.");
+      if (value === null || typeof value !== "object") throw new Error(t("example.state.mustBeObject"));
       return { ok: true, value };
     } catch (e) {
-      return { ok: false, error: e instanceof Error ? e.message : "Invalid JSON." };
+      return { ok: false, error: e instanceof Error ? e.message : t("example.state.invalidJson") };
     }
   }
 
@@ -74,30 +76,30 @@ export function ExampleView(example, status) {
     let canRun = false;
 
     if (!parsed.ok) {
-      stateNote.textContent = `Not valid JSON yet: ${parsed.error}`;
-      requestNode = h("p", { class: "panel-note" }, "Fix the state to see the request.");
+      stateNote.textContent = t("example.state.notValidYet", { error: parsed.error });
+      requestNode = h("p", { class: "panel-note" }, t("example.state.fixToSeeRequest"));
       mount(questionsBox, questionSummary(example.questions(preset.state)));
     } else {
       let built = null;
       try {
         built = buildFor(parsed.value);
       } catch {
-        stateNote.textContent = "This state does not match the shape this example expects.";
+        stateNote.textContent = t("example.state.shapeError");
       }
       if (built) {
         const unchanged = isUnchanged(parsed.value);
         canRun = live || unchanged;
         stateNote.textContent = live
           ? unchanged
-            ? "The model sees exactly this JSON. Edit it to try your own input."
-            : "Edited: the next run sends your version to Jev."
+            ? t("example.state.note.live.unchanged")
+            : t("example.state.note.live.edited")
           : unchanged
-            ? "Preset input. Editing needs a live API key, because sample answers only exist for the presets."
-            : "Edited, but no API key is set, so there is nothing to run it on. Pick a preset to reset.";
+            ? t("example.state.note.demo.unchanged")
+            : t("example.state.note.demo.edited");
         mount(questionsBox, questionSummary(built.questions));
         requestNode = requestPanel(built.request);
       } else {
-        requestNode = h("p", { class: "panel-note" }, "No request for this state.");
+        requestNode = h("p", { class: "panel-note" }, t("example.request.none"));
       }
     }
     mount(requestBox, requestNode);
@@ -115,9 +117,10 @@ export function ExampleView(example, status) {
         criteriaLine(q),
       );
     if (entries.length <= 4) return entries.map(item);
+    const extra = entries.length - 2;
     return [
       ...entries.slice(0, 2).map(item),
-      h("details", null, h("summary", null, `${entries.length - 2} more questions built the same way`), entries.slice(2).map(item)),
+      h("details", null, h("summary", null, t(pluralKey(getLang(), "example.questions.more", extra), { n: extra })), entries.slice(2).map(item)),
     ];
   }
 
@@ -135,8 +138,8 @@ export function ExampleView(example, status) {
     return h(
       "details",
       null,
-      h("summary", null, "See the exact request"),
-      h("div", { class: "panel", style: { marginTop: "10px" } }, h("p", { class: "label" }, "JSON body"), codeBlock(pretty(request)), h("p", { class: "label" }, "curl"), codeBlock(toCurl(request))),
+      h("summary", null, t("example.request.seeExact")),
+      h("div", { class: "panel", style: { marginTop: "10px" } }, h("p", { class: "label" }, t("example.request.jsonBody")), codeBlock(pretty(request)), h("p", { class: "label" }, t("example.request.curl")), codeBlock(toCurl(request))),
     );
   }
 
@@ -145,7 +148,7 @@ export function ExampleView(example, status) {
   async function execute() {
     const parsed = parseState();
     if (!parsed.ok) {
-      error = new Error(`The state is not valid JSON: ${parsed.error}`);
+      error = new Error(t("example.state.notValidError", { error: parsed.error }));
       run = null;
       return renderResults();
     }
@@ -153,13 +156,13 @@ export function ExampleView(example, status) {
     try {
       built = buildFor(parsed.value);
     } catch {
-      error = new Error("This state does not match the shape this example expects.");
+      error = new Error(t("example.state.shapeError"));
       run = null;
       return renderResults();
     }
     const check = validateRequest(built.request);
     if (!check.ok) {
-      error = Object.assign(new Error("The request is invalid."), { errors: check.errors });
+      error = Object.assign(new Error(t("example.request.invalid")), { errors: check.errors });
       run = null;
       return renderResults();
     }
@@ -167,7 +170,7 @@ export function ExampleView(example, status) {
     busy = true;
     error = null;
     runButton.disabled = true;
-    runButton.textContent = "Running…";
+    runButton.textContent = t("example.run.running");
     try {
       run = live
         ? await runRequest(built.request)
@@ -178,7 +181,7 @@ export function ExampleView(example, status) {
       run = null;
     } finally {
       busy = false;
-      runButton.textContent = live ? "Run with Jev" : "Show sample answers";
+      runButton.textContent = live ? t("example.run.live") : t("example.run.sample");
     }
     refreshInputs();
     renderResults();
@@ -192,7 +195,7 @@ export function ExampleView(example, status) {
     } else if (!run) {
       mount(
         resultBox,
-        h("div", { class: "empty" }, live ? "Press Run to ask Jev. One request costs a fraction of a cent." : "Press the button to load the sample answers for this preset."),
+        h("div", { class: "empty" }, live ? t("example.empty.live") : t("example.empty.demo")),
       );
     } else {
       const ctx = { questions: lastCtx.questions, state: lastCtx.state, answers: run.response.answers, policy };
@@ -226,13 +229,13 @@ export function ExampleView(example, status) {
   function renderPresets() {
     mount(
       presetsBox,
-      example.presets.map((p) => h("button", { class: "chip-btn", type: "button", "aria-pressed": String(p.id === preset.id), onClick: () => selectPreset(p) }, p.label)),
+      example.presets.map((p) => h("button", { class: "chip-btn", type: "button", "aria-pressed": String(p.id === preset.id), onClick: () => selectPreset(p) }, exampleCopy(example.id, `preset.${p.id}`, t))),
     );
   }
 
   stateInput.addEventListener("input", refreshInputs);
   runButton.addEventListener("click", execute);
-  runButton.textContent = live ? "Run with Jev" : "Show sample answers";
+  runButton.textContent = live ? t("example.run.live") : t("example.run.sample");
 
   // --- Page ---------------------------------------------------------------------
 
@@ -242,10 +245,10 @@ export function ExampleView(example, status) {
     h(
       "header",
       { class: "ex-head" },
-      h("nav", { class: "crumbs eyebrow", "aria-label": "Breadcrumb" }, h("a", { href: "#/" }, "Examples"), "/", example.pattern),
-      h("h1", { class: "ex-title" }, example.title),
+      h("nav", { class: "crumbs eyebrow", "aria-label": t("example.crumb.aria") }, h("a", { href: "#/" }, t("nav.examples")), "/", example.pattern),
+      h("h1", { class: "ex-title" }, exampleCopy(example.id, "title", t)),
       h("div", { class: "ex-meta" }, example.primitives.map((p) => h("span", { class: "tag" }, p))),
-      h("p", { class: "lesson" }, example.lesson),
+      h("p", { class: "lesson" }, exampleCopy(example.id, "lesson", t)),
     ),
     h(
       "div",
@@ -256,20 +259,20 @@ export function ExampleView(example, status) {
         h(
           "section",
           { class: "panel" },
-          h("div", { class: "panel-h" }, h("h2", { class: "h-section" }, "1. State"), h("span", { class: "panel-note" }, "What the model sees")),
+          h("div", { class: "panel-h" }, h("h2", { class: "h-section" }, t("example.section.state")), h("span", { class: "panel-note" }, t("example.section.stateNote"))),
           presetsBox,
-          h("label", { class: "label", for: "state-input" }, "State (JSON)"),
+          h("label", { class: "label", for: "state-input" }, t("example.section.stateLabel")),
           stateInput,
           stateNote,
         ),
-        h("section", { class: "panel" }, h("div", { class: "panel-h" }, h("h2", { class: "h-section" }, "2. Questions"), h("span", { class: "panel-note" }, "Typed, narrow, parallel")), questionsBox, requestBox),
+        h("section", { class: "panel" }, h("div", { class: "panel-h" }, h("h2", { class: "h-section" }, t("example.section.questions")), h("span", { class: "panel-note" }, t("example.section.questionsNote"))), questionsBox, requestBox),
       ),
       h(
         "div",
         { class: "col" },
-        h("section", { class: "panel" }, h("div", { class: "panel-h" }, h("h2", { class: "h-section" }, "3. Answers"), runButton), resultBox),
+        h("section", { class: "panel" }, h("div", { class: "panel-h" }, h("h2", { class: "h-section" }, t("example.section.answers")), runButton), resultBox),
         decisionBox,
-        h("section", { class: "panel" }, h("div", { class: "panel-h" }, h("h2", { class: "h-section" }, "4. The code"), h("span", { class: "panel-note" }, "Illustrative logic")), codeBlock(example.logic)),
+        h("section", { class: "panel" }, h("div", { class: "panel-h" }, h("h2", { class: "h-section" }, t("example.section.code")), h("span", { class: "panel-note" }, t("example.section.codeNote"))), codeBlock(example.logic)),
       ),
     ),
   );

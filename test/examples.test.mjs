@@ -11,6 +11,7 @@ import {
 import { expandSample } from "../lib/fixtures.mjs";
 import { buildRequest } from "../lib/questions.mjs";
 import { validateRequest } from "../lib/questions.mjs";
+import { createT } from "../lib/i18n.mjs";
 
 const answersFor = (exampleId, presetId) => {
   const example = getExample(exampleId);
@@ -183,4 +184,35 @@ test("guardrails: a borderline noul near 0.5 is sent to review, not decided", ()
   const d = decideFor("guardrails", "borderline-rant");
   assert.match(d.headline, /^Review/);
   assert.equal(d.tone, "confirm");
+});
+
+test("ticket desk: Spanish headline sends a vague ticket to human triage", () => {
+  const tEs = createT("es");
+  const d = getExample("ticket-desk").decide(answersFor("ticket-desk", "vague-ping"), {
+    policy: DEFAULT_POLICY,
+    t: tEs,
+  });
+  assert.equal(d.headline, "Enviar a triaje humano");
+});
+
+test("citation check: Spanish headline for a supported claim", () => {
+  const tEs = createT("es");
+  const d = getExample("citation-check").decide(answersFor("citation-check", "supported"), {
+    policy: DEFAULT_POLICY,
+    t: tEs,
+  });
+  assert.equal(d.headline, "La cita se sostiene");
+});
+
+test("guardrails: Spanish headline allows benign text", () => {
+  const tEs = createT("es");
+  const d = getExample("guardrails").decide(answersFor("guardrails", "benign"), { t: tEs });
+  assert.equal(d.headline, "Permitir");
+});
+
+test("phish check: decide() Spanish headline uses extras.phish.verdict keys", () => {
+  const tEs = createT("es");
+  const d = getExample("phish-check").decide(answersFor("phish-check", "bank-alert"), { t: tEs });
+  assert.equal(d.headline, tEs("extras.phish.verdict.phishing"));
+  assert.equal(d.headline, "Probable phishing: poner en cuarentena");
 });

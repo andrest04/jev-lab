@@ -24,7 +24,6 @@ export function phishDecision({ answers }) {
 
   function render() {
     const { value, verdict } = phishVerdict(signals, weights, threshold);
-    // These labels duplicate PHISH.decide in lib/examples.mjs; T4 may deduplicate them.
     const label = t(`extras.phish.verdict.${verdict}`);
     const tone = verdict === "suspicious" ? "confirm" : "act";
     verdictBox.replaceChildren(tierChip(tone), h("h3", { class: "decision-title" }, label));
